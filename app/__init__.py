@@ -1,6 +1,11 @@
 """
-Swoosh App Module
+Swoosh - CHZZK API Server
 
-Core application module containing the main app instance and configuration.
-This module handles the server application setup and lifecycle.
+A simple python API client for interacting with CHZZK services.
+
 """
+
+__version__ = "0.1.0"
+__author__ = "seokgukim"
+__description__ = "My CHZZK API server"
+__license__ = "MIT License"
