@@ -1,17 +1,37 @@
-from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from pymongo import MongoClient
+from pymongo.errors import ConnectionFailure
+from ..core.config import settings
+from ..utils.logger import *
 
-DATABASE_URL = "sqlite:///./test.db"  # Example database URL, change as needed
 
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+class Database:
+    def __init__(self):
+        self.client = None
+        self.db = None
+        self.connect()
 
-Base = declarative_base()
+    def connect(self):
+        try:
+            self.client = MongoClient(settings.MONGO_URI)
+            # The ismaster command is cheap and does not require auth.
+            self.client.admin.command("ismaster")
+            self.db = self.client[settings.DATABASE_NAME]
+            log_info("Successfully connected to MongoDB")
+        except ConnectionFailure as e:
+            log_error(f"Could not connect to MongoDB: {e}")
+            raise
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+    def get_collection(self, collection_name):
+        if self.db is not None:
+            return self.db[collection_name]
+        else:
+            log_error("Database connection is not established")
+            return None
+
+    def close(self):
+        if self.client is not None:
+            self.client.close()
+            log_info("MongoDB connection closed")
+
+
+database = Database()
