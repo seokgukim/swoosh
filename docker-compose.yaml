@@ -1,0 +1,22 @@
+# Run python app with MongoDB using Docker Compose
+version: "3.8"
+services:
+  mongo:
+    image: mongo:latest
+    container_name: swoosh_mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+  app:
+    build: ./app
+    container_name: swoosh_app
+    ports:
+      - "5000:5000"
+    depends_on:
+      - mongo
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/swoosh_db
+    volumes:
+      - .:/app
