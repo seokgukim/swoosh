@@ -7,7 +7,9 @@ load_dotenv()
 class Settings:
     PROJECT_NAME: str = "Swoosh"
     PROJECT_VERSION: str = "0.1.0"
+
     DEBUG: bool = os.getenv("DEBUG", "False").lower() in ("true", "1", "t")
+    LOG_PATH: str = os.getenv("LOG_PATH", "./logs")
 
     APP_URL: str = os.getenv("APP_URL", "http://localhost")
     PORT: int = int(os.getenv("PORT", 8000))
@@ -32,4 +34,3 @@ class Settings:
 
 
 settings = Settings()
-
