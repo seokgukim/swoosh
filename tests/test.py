@@ -3,8 +3,8 @@ Main test script to run all tests.
 """
 
 import unittest
-from .core.config import settings
-from .utils.logger import *
+from ..src.core.config import settings
+from ..src.utils.logger import *
 
 # from .tests.test_module import TestModule
 
