@@ -4,19 +4,19 @@ services:
   mongo:
     image: mongo:latest
     container_name: swoosh_mongo
-    ports:
-      - "27017:27017"
-    volumes:
+    expose:
+      - "27017"
+    volume:
       - mongo_data:/data/db
 
   app:
-    build: ./app
+    build: ./src
     container_name: swoosh_app
-    ports:
-      - "5000:5000"
+    expose:
+      - "8000"
     depends_on:
       - mongo
     environment:
       - MONGO_URI=mongodb://mongo:27017/swoosh_db
     volumes:
-      - .:/app
+      - ./logs:/app/logs
