@@ -1,5 +1,6 @@
 from .singleton import SingletonMeta
 import logging
+from logging.handlers import RotatingFileHandler
 
 
 class Logger(metaclass=SingletonMeta):
@@ -60,7 +61,7 @@ def add_file_handler(file_path, level=logging.INFO):
     Adds a file handler to the logger.
     """
     logger = Logger().get_logger()
-    fh = logging.FileHandler(file_path)
+    fh = RotatingFileHandler(file_path, maxBytes=2**20, backupCount=5)
     fh.setLevel(level)
     formatter = logging.Formatter(
         "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
@@ -76,7 +77,7 @@ def remove_file_handler(file_path):
     logger = Logger().get_logger()
     for handler in logger.handlers:
         if (
-            isinstance(handler, logging.FileHandler)
+            isinstance(handler, RotatingFileHandler)
             and handler.baseFilename == file_path
         ):
             logger.removeHandler(handler)

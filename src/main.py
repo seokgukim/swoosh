@@ -13,5 +13,9 @@ def read_root():
 
 if __name__ == "__main__":
     import uvicorn
+    import os
+    from .core.config import settings
+    from .utils.logger import add_file_handler
 
+    add_file_handler(os.path.join(settings.LOG_PATH, "swoosh.log"))
     uvicorn.run(app, host="0.0.0.0", port=8000)
