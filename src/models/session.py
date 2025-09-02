@@ -1,11 +1,7 @@
 from ..utils.singleton import SingletonMeta
 from ..db.database import database
-
-
-class SessionError(Exception):
-    """Custom exception for session-related errors."""
-
-    pass
+from ..api.client import ChzzkClient
+from socketio import AsyncClient
 
 
 class ChzzkSession:
@@ -24,6 +20,37 @@ class ChzzkSession:
 
     def clear(self):
         self.session_data.clear()
+
+    async def session_connect(self, data):
+        # Connect a session with data
+        db = database.get_collection("tokens")
+        if db is None:
+            return 500
+
+        if "scope" not in data:
+            return 400
+
+        if data.get("scope") == "user":
+            if "token" not in data:
+                return 400
+
+            token_data = db.find_one({"accessToken": data.get("token")})
+            if not token_data:
+                return 401
+
+            client = ChzzkClient()
+            additional_headers = {"Authorization": f"Bearer {data.get('token')}"}
+            response = await client.get(
+                "/open/v1/sessions/auth", additional_headers=additional_headers
+            )
+
+            if "url" not in response:
+                return 401
+
+        elif data.get("scope") == "client":
+            return 200
+        else:
+            return 400
 
 
 class SessionManager(metaclass=SingletonMeta):
