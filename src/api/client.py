@@ -18,25 +18,39 @@ class ChzzkClient:
         }
 
     async def get(
-        self, endpoint: str, params: Optional[Dict[str, Any]] = None
+        self,
+        endpoint: str,
+        params: Optional[Dict[str, Any]] = None,
+        additional_headers: Optional[Dict[str, str]] = None,
     ) -> Dict[str, Any]:
         """Make GET request to CHZZK API"""
         async with httpx.AsyncClient() as client:
+            headers = self.headers.copy()
+            if additional_headers is not None:
+                headers.update(additional_headers)
             response = await client.get(
                 f"{settings.CHZZK_OPEN_API_URL}{endpoint}",
-                headers=self.headers,
+                headers=headers,
                 params=params,
             )
             response.raise_for_status()
             log_debug(f"GET {endpoint} response: {response.text}")
             return response.json()
 
-    async def post(self, endpoint: str, data: Dict[str, Any]) -> Dict[str, Any]:
+    async def post(
+        self,
+        endpoint: str,
+        data: Dict[str, Any],
+        additional_headers: Optional[Dict[str, str]] = None,
+    ) -> Dict[str, Any]:
         """Make POST request to CHZZK API"""
         async with httpx.AsyncClient() as client:
+            headers = self.headers.copy()
+            if additional_headers is not None:
+                headers.update(additional_headers)
             response = await client.post(
                 f"{settings.CHZZK_OPEN_API_URL}{endpoint}",
-                headers=self.headers,
+                headers=headers,
                 json=data,
             )
             response.raise_for_status()
