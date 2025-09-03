@@ -6,7 +6,7 @@ load_dotenv()
 
 class Settings:
     PROJECT_NAME: str = "Swoosh"
-    PROJECT_VERSION: str = "0.1.0"
+    PROJECT_VERSION: str = os.getenv("PROJECT_VERSION", "0.1.0")
 
     DEBUG: bool = os.getenv("DEBUG", "False").lower() in ("true", "1", "t")
     LOG_PATH: str = os.getenv("LOG_PATH", "./logs")
