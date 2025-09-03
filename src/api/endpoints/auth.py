@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Response
 from typing import Dict, Any
 import asyncio
 
-from app.utils.logger import *
+from ...utils.logger import *
 from ..client import ChzzkClient
 
 router = APIRouter(prefix="/auth", tags=["auth"])
