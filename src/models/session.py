@@ -1,6 +1,7 @@
 from ..utils.singleton import SingletonMeta
 from ..db.database import database
 from ..api.client import ChzzkClient
+from ..core.config import settings
 from socketio import AsyncClient
 from ..utils.logger import *
 import json
@@ -79,6 +80,9 @@ class ChzzkSession:
                     return InvalidMessage()
             else:
                 if "eventType" not in msg_json.get("data") or msg_json.get("data").get(
+                    "accesstoken": content.get("accesstoken"),
+                    "refreshtoken": content.get("refreshtoken"),
+                    "expiresin": content.get("expiresin", 3600),
                     "eventType"
                 ) not in ["CHAT", "DONATION", "SUBSCRIPTION"]:
                     log_error(
@@ -310,18 +314,27 @@ class ChzzkSession:
         msg_json = self.load_chat_message(message)
         if msg_json.isinstance(InvalidMessage):
             return
+        log_info(
+            f"[session {self.get('token', 'unknown')}] Chat message received: {msg_json}"
+        )
 
     async def handle_donation_message(self, message):
         # Handle donation messages here
         msg_json = self.load_donation_message(message)
         if msg_json.isinstance(InvalidMessage):
             return
+        log_info(
+            f"[session {self.get('token', 'unknown')}] Donation message received: {msg_json}"
+        )
 
     async def handle_subscription_message(self, message):
         # Handle subscription messages here
         msg_json = self.load_subscription_message(message)
         if msg_json.isinstance(InvalidMessage):
             return
+        log_info(
+            f"[session {self.get('token', 'unknown')}] Subscription message received: {msg_json}"
+        )
 
     async def session_connect(self, data):
         # Connect a session with data
@@ -346,8 +359,13 @@ class ChzzkSession:
                 "/open/v1/sessions/auth", additional_headers=additional_headers
             )
 
-            if "url" not in response:
-                return 401
+            if response.get("code") != 200:
+                log_error(
+                    f"[session {data.get('token')}] Failed to authenticate token: {response}"
+                )
+                return response.get("code", 500)
+
+            content = response.get("content", {})
 
             socket = AsyncClient()
             socket.on("SYSTEM", self.handle_system_message)
@@ -355,7 +373,7 @@ class ChzzkSession:
             socket.on("DONATION", self.handle_donation_message)
             socket.on("SUBSCRIPTION", self.handle_subscription_message)
             log_info(
-                f"[session {data.get('token')}] Connecting to {response.get('url')}"
+                f"[session {data.get('token')}] Connecting to {content.get('url')}..."
             )
 
             self.set("socket", socket)
@@ -366,7 +384,7 @@ class ChzzkSession:
                 log_info(
                     f"[session {data.get('token')}] Attempting to connect to socket..."
                 )
-                await socket.connect(response.get("url"), transports=["websocket"])
+                await socket.connect(content.get("url"), transports=["websocket"])
             except Exception as e:
                 log_error(
                     f"[session {data.get('token')}] Failed to connect to socket: {e}"
@@ -376,6 +394,39 @@ class ChzzkSession:
 
             return 200
         elif data.get("scope") == "client":
+            additional_headers = {
+                "Client-Id": settings.CHZZK_CLIENT_ID,
+                "Client-Secret": settings.CHZZK_CLIENT_SECRET,
+            }
+            client = ChzzkClient()
+            response = await client.get(
+                "/open/v1/sessions/auth/client", additional_headers=additional_headers
+            )
+
+            if response.get("code") != 200:
+                log_error(f"[session client] Failed to authenticate client: {response}")
+                return response.get("code", 500)
+
+            content = response.get("content", {})
+
+            socket = AsyncClient()
+            socket.on("SYSTEM", self.handle_system_message)
+            socket.on("CHAT", self.handle_chat_message)
+            socket.on("DONATION", self.handle_donation_message)
+            socket.on("SUBSCRIPTION", self.handle_subscription_message)
+            log_info(f"[session client] Connecting to {content.get('url')}...")
+
+            self.set("socket", socket)
+            self.set("scope", "client")
+
+            try:
+                log_info(f"[session client] Attempting to connect to socket...")
+                await socket.connect(content.get("url"), transports=["websocket"])
+            except Exception as e:
+                log_error(f"[session client] Failed to connect to socket: {e}")
+                await self.socket_disconnect()
+                return 500
+
             return 200
 
         return 400
