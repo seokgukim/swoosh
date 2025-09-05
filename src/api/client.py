@@ -1,6 +1,6 @@
 import httpx
 import json
-from ..core.config import settings
+from ..core.config import *
 from typing import Dict, Any, Optional
 from ..utils.logger import *
 from ..db.database import database
@@ -29,7 +29,7 @@ class ChzzkClient:
             if additional_headers is not None:
                 headers.update(additional_headers)
             response = await client.get(
-                f"{settings.CHZZK_OPEN_API_URL}{endpoint}",
+                f"{CHZZK_OPEN_API_URL()}{endpoint}",
                 headers=headers,
                 params=params if params is not None else {},
             )
@@ -49,7 +49,7 @@ class ChzzkClient:
             if additional_headers is not None:
                 headers.update(additional_headers)
             response = await client.post(
-                f"{settings.CHZZK_OPEN_API_URL}{endpoint}",
+                f"{CHZZK_OPEN_API_URL()}{endpoint}",
                 headers=headers,
                 json=data,
             )
@@ -63,8 +63,8 @@ class ChzzkClient:
         """
         data = {
             "grantType": "authorization_code",
-            "clientId": settings.CHZZK_CLIENT_ID,
-            "clientSecret": settings.CHZZK_CLIENT_SECRET,
+            "clientId": CHZZK_CLIENT_ID(),
+            "clientSecret": CHZZK_CLIENT_SECRET(),
             "code": code,
             "state": state,
         }
@@ -116,8 +116,8 @@ class ChzzkClient:
 
         refresh_token = token_data.get("refreshToken")
         data = {
-            "clientId": settings.CHZZK_CLIENT_ID,
-            "clientSecret": settings.CHZZK_CLIENT_SECRET,
+            "clientId": CHZZK_CLIENT_ID(),
+            "clientSecret": CHZZK_CLIENT_SECRET(),
             "refreshToken": refresh_token,
             "grantType": "refresh_token",
         }
@@ -165,8 +165,8 @@ class ChzzkClient:
 
         refresh_token = token_data.get("refreshToken")
         data = {
-            "clientId": settings.CHZZK_CLIENT_ID,
-            "clientSecret": settings.CHZZK_CLIENT_SECRET,
+            "clientId": CHZZK_CLIENT_ID(),
+            "clientSecret": CHZZK_CLIENT_SECRET(),
             "token": refresh_token,
             "tokenTypeHint": "refresh_token",
         }

@@ -1,7 +1,7 @@
 from ..utils.singleton import SingletonMeta
 from ..db.database import database
 from ..api.client import ChzzkClient
-from ..core.config import settings
+from ..core.config import *
 from socketio import AsyncClient
 from ..utils.logger import *
 import json
@@ -79,12 +79,7 @@ class ChzzkSession:
                     )
                     return InvalidMessage()
             else:
-                if "eventType" not in msg_json.get("data") or msg_json.get("data").get(
-                    "accesstoken": content.get("accesstoken"),
-                    "refreshtoken": content.get("refreshtoken"),
-                    "expiresin": content.get("expiresin", 3600),
-                    "eventType"
-                ) not in ["CHAT", "DONATION", "SUBSCRIPTION"]:
+                if "eventType" not in msg_json.get("data") or msg_json.get("data").get("eventType") not in ["CHAT", "DONATION", "SUBSCRIPTION"]:
                     log_error(
                         f"[session {self.get('token', 'unknown')}] System message with unknown event type: {message}"
                     )
@@ -395,8 +390,8 @@ class ChzzkSession:
             return 200
         elif data.get("scope") == "client":
             additional_headers = {
-                "Client-Id": settings.CHZZK_CLIENT_ID,
-                "Client-Secret": settings.CHZZK_CLIENT_SECRET,
+                "Client-Id": CHZZK_CLIENT_ID(),
+                "Client-Secret": CHZZK_CLIENT_SECRET(),
             }
             client = ChzzkClient()
             response = await client.get(

@@ -1,6 +1,6 @@
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
-from ..core.config import settings
+from ..core.config import *
 from ..utils.logger import *
 
 
@@ -12,10 +12,10 @@ class Database:
 
     def connect(self):
         try:
-            self.client = MongoClient(settings.MONGO_URI)
+            self.client = MongoClient(MONGO_URI())
             # The ismaster command is cheap and does not require auth.
             self.client.admin.command("ismaster")
-            self.db = self.client[settings.DATABASE_NAME]
+            self.db = self.client[DATABASE_NAME()]
             log_info("Successfully connected to MongoDB")
         except ConnectionFailure as e:
             log_error(f"Could not connect to MongoDB: {e}")
