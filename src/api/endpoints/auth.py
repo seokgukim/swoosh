@@ -10,10 +10,7 @@ lock = asyncio.Lock()
 
 
 @router.get("/callback")
-async def auth_callback(
-    code: str,
-    state: str,
-) -> Response:
+async def auth_callback(code: str, state: str = "swoosh") -> Response:
     """
     OAuth callback endpoint to handle CHZZK authentication
 
