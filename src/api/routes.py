@@ -1,7 +1,9 @@
 from fastapi import APIRouter
 
-from .endpoints import *
+from .routers import v1
 
-api_router = APIRouter(prefix="/api/v1")
+# Create a main API router and include the versioned router
+api_router = APIRouter()
 
-# Include all endpoint routers
+# Manually include the versioned router
+api_router.include_router(v1.router, prefix="/api/v1", tags=["v1"])  # Include v1 routes
