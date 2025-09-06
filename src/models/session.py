@@ -1,10 +1,11 @@
+from socketio import AsyncClient
+import json
+
 from ..utils.singleton import SingletonMeta
 from ..db.database import database
-from ..api.client import ChzzkClient
+from .client import ChzzkClient
 from ..core.config import *
-from socketio import AsyncClient
-from ..utils.logger import *
-import json
+from ..core.logger import *
 
 
 class InvalidMessage(object):
