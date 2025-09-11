@@ -9,6 +9,7 @@ load_dotenv()
 def PROJECT_NAME() -> str:
     return "Swoosh"
 
+
 @lru_cache(maxsize=1)
 def PROJECT_VERSION() -> str:
     return os.getenv("PROJECT_VERSION", "0.1.0")
@@ -36,6 +37,11 @@ def PORT() -> int:
 
 def APP_SECRET() -> str:
     return os.getenv("APP_SECRET", "your_default_secret_key")
+
+
+@lru_cache(maxsize=1)
+def JWT_ALGORITHM() -> str:
+    return os.getenv("JWT_ALGORITHM", "HS256")
 
 
 @lru_cache(maxsize=1)
