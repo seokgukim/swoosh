@@ -8,7 +8,9 @@ from ..db.database import database
 
 
 class ChzzkClient:
-    """Client for making requests to CHZZK Open API"""
+    """
+    Client for making requests to CHZZK Open API
+    """
 
     def __init__(self):
         """
@@ -61,6 +63,12 @@ class ChzzkClient:
     async def token_exchange(self, code: str, state: str = "swoosh") -> int:
         """
         Exchange authorization code for access token
+        
+        Args:
+            code: Authorization code from CHZZK
+            state: State parameter to prevent CSRF
+        Returns:
+            Status code and token data if successful
         """
         data = {
             "grantType": "authorization_code",
@@ -73,47 +81,35 @@ class ChzzkClient:
         response = await self.post("/auth/v1/token", data)
         if response.get("code") != 200:
             log_error(f"Token exchange error: {json.dumps(response)}")
-            return response.get("code", 500)
+            return response.get("code", 500), None
 
         content = response.get("content", {})
 
         if "accessToken" in content and "refreshToken" in content:
-            db = database.get_collection("tokens")
-            if db is None:
-                log_error("database connection is not established")
-                return 500
-
-            result = db.insert_one(
-                {
-                    "accessToken": content.get("accessToken"),
-                    "refreshToken": content.get("refreshToken"),
-                    "expiresIn": content.get("expiresIn", 3600),
-                    "state": state,
-                }
-            )
-
-            if result.acknowledged:
-                log_info(
-                    f"token exchanged successfully for code: {code} to access token: {content.get('accesstoken')}"
-                )
-                return 200
+            token_data = {
+                "accessToken": content.get("accessToken"),
+                "refreshToken": content.get("refreshToken"),
+                "expiresIn": content.get("expiresIn", 3600),
+                "state": state,
+            }
+            
+            return 200, token_data
 
         log_error(f"token exchange failed: {json.dumps(response)}")
-        return 500
+        return 500, None
 
-    async def token_refresh(self, access_token: str) -> int:
+    async def token_refresh(self, token_data: Dict[str, Any]) -> int:
         """
-        refresh access token using refresh token
+        Refresh access token using refresh token
+        
+        Args:
+            token_data: Dictionary containing the current token data
+        Returns:
+            Status code and refreshed token data if successful
         """
-        db = database.get_collection("tokens")
-        if db is None:
-            log_error("database connection is not established")
-            return 500
-
-        token_data = db.find_one({"accessToken": access_token})
         if not token_data or "refreshToken" not in token_data:
             log_error("no valid token found for refresh")
-            return 401
+            return 401, None
 
         refresh_token = token_data.get("refreshToken")
         data = {
@@ -130,36 +126,27 @@ class ChzzkClient:
         content = response.get("content", {})
 
         if "accessToken" in content and "refreshToken" in content:
-            result = db.update_one(
-                {"_id": token_data.get("_id")},
-                {
-                    "$set": {
-                        "accessToken": content.get("accessToken"),
-                        "refreshToken": content.get("refreshToken"),
-                        "expiresIn": content.get("expiresIn", 3600),
-                        "state": token_data.get("state", "swoosh"),
-                    }
-                },
-            )
-            if result.acknowledged:
-                log_info(
-                    f"token refreshed successfully for access token: {access_token}"
-                )
-                return 200
+            refreshed_token_data = {
+                "accessToken": content.get("accessToken"),
+                "refreshToken": content.get("refreshToken"),
+                "expiresIn": content.get("expiresIn", 3600),
+                "state": token_data.get("state", "swoosh"),
+            }
+            
+            return 200, refreshed_token_data
 
         log_error(f"token refresh failed: {json.dumps(response)}")
-        return 500
+        return 500, None
 
-    async def token_revoke(self, access_token: str) -> int:
+    async def token_revoke(self, token_data: Dict[str, Any]) -> int:
         """
-        revoke access token
-        """
-        db = database.get_collection("tokens")
-        if db is None:
-            log_error("Database connection is not established")
-            return 500
+        Revoke access token
 
-        token_data = db.find_one({"accessToken": access_token})
+        Args:
+            token_data: Dictionary containing the current token data
+        Returns:
+            Status code indicating success or failure
+        """
         if not token_data or "refreshToken" not in token_data:
             log_error("No valid token found for revoke")
             return 401
@@ -177,10 +164,4 @@ class ChzzkClient:
             log_error(f"Token revoke error: {json.dumps(response)}")
             return response.get("code", 500)
 
-        result = db.delete_one({"_id": token_data.get("_id")})
-        if result.acknowledged:
-            log_info(f"Token revoked successfully for access token: {access_token}")
-            return 200
-
-        log_error(f"Token revoke failed: {json.dumps(response)}")
-        return 500
+        return 200
