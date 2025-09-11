@@ -4,6 +4,8 @@ import asyncio
 
 from ...core.config import *
 from ...core.logger import *
+from ...db.database import database
+from ...models.jwt_manager import create_token, create_refresh_token
 from ...models.client import ChzzkClient
 from ...utils.uuid_manager import generate_uuid, validate_uuid, remove_uuid
 
@@ -52,11 +54,20 @@ async def auth_callback(code: str, state: str = "swoosh") -> Response:
     client = ChzzkClient()
     try:
         async with lock:
-            result = await client.token_exchange(code, state)
+            result, token = await client.token_exchange(code, state)
             if result == 200:
-                return Response(
+                jwt_token = create_token({"access_token": token["accessToken"]}, expires_delta=timedelta(seconds=token["expiresIn"]))
+
+                response Response(
                     content="Authentication successful. You can close this window.",
                     media_type="text/html",
+                )
+                response.set_cookie(
+                    key="swoosh_token",
+                    value=jwt_token,
+                    httponly=True,
+                    secure=!DEBUG(),
+                    samesite="lax",
                 )
             return Response(
                 content="Authentication failed. Please try again.",
