@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Response
 from typing import Dict, Any
 import asyncio
+from datetime import datetime, timedelta
 
 from ...core.config import *
 from ...core.logger import *
@@ -55,10 +56,13 @@ async def auth_callback(code: str, state: str = "swoosh") -> Response:
     try:
         async with lock:
             result, token = await client.token_exchange(code, state)
-            if result == 200:
-                jwt_token = create_token({"access_token": token["accessToken"]}, expires_delta=timedelta(seconds=token["expiresIn"]))
+            if result == 200 and token is not None:
+                jwt_token = create_token(
+                    {"access_token": token["accessToken"]},
+                    expires_delta=timedelta(seconds=token["expiresIn"]),
+                )
 
-                response Response(
+                response = Response(
                     content="Authentication successful. You can close this window.",
                     media_type="text/html",
                 )
@@ -66,7 +70,7 @@ async def auth_callback(code: str, state: str = "swoosh") -> Response:
                     key="swoosh_token",
                     value=jwt_token,
                     httponly=True,
-                    secure=!DEBUG(),
+                    secure=not DEBUG(),
                     samesite="lax",
                 )
             return Response(
