@@ -60,10 +60,12 @@ class ChzzkClient:
             log_debug(f"POST {endpoint} response: {response.text}")
             return response.json()
 
-    async def token_exchange(self, code: str, state: str = "swoosh") -> int:
+    async def token_exchange(
+        self, code: str, state: str = "swoosh"
+    ) -> tuple[int, Optional[Dict[str, Any]]]:
         """
         Exchange authorization code for access token
-        
+
         Args:
             code: Authorization code from CHZZK
             state: State parameter to prevent CSRF
@@ -92,16 +94,18 @@ class ChzzkClient:
                 "expiresIn": content.get("expiresIn", 3600),
                 "state": state,
             }
-            
+
             return 200, token_data
 
         log_error(f"token exchange failed: {json.dumps(response)}")
         return 500, None
 
-    async def token_refresh(self, token_data: Dict[str, Any]) -> int:
+    async def token_refresh(
+        self, token_data: Dict[str, Any]
+    ) -> tuple[int, Optional[Dict[str, Any]]]:
         """
         Refresh access token using refresh token
-        
+
         Args:
             token_data: Dictionary containing the current token data
         Returns:
@@ -132,7 +136,7 @@ class ChzzkClient:
                 "expiresIn": content.get("expiresIn", 3600),
                 "state": token_data.get("state", "swoosh"),
             }
-            
+
             return 200, refreshed_token_data
 
         log_error(f"token refresh failed: {json.dumps(response)}")
